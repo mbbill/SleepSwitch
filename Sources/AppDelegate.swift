@@ -56,6 +56,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.syncWithSystem()
         }
         updates.start()
+        ReconcileAgent.install()
         powerSource.startObserving { [weak self] in self?.checkBattery() }
         lid.startObserving { [weak self] closed in self?.lidChanged(closed: closed) }
     }
@@ -142,6 +143,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func syncWithSystem() {
+        mode.renewLease()
         mode.syncWithSystem()
         refreshAppearance()
         checkBattery()
@@ -376,6 +378,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             confirm: L("uninstall.confirm.button", "Uninstall")
         )
         guard confirmed else { return }
+
+        // The agent is ours as the user, so it goes before the privileged step rather
+        // than inside it.
+        ReconcileAgent.remove()
 
         switch Uninstaller.run() {
         case .failure(.cancelled):

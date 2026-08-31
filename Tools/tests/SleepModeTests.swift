@@ -96,6 +96,56 @@ func runSleepModeTests() {
                     "during logout it never asks for a password")
     }
 
+    Test.section("SleepMode: the lease the reconcile agent reads")
+
+    do {
+        let ban = FakeSleepBan()
+        let lease = FakeBanLease()
+        let mode = SleepMode(ban: ban, lease: lease)
+
+        mode.set(true)
+        Test.expect(lease.renewals == 1, "arming the ban writes the lease")
+
+        mode.renewLease()
+        Test.expect(lease.renewals == 2, "the lease is renewed while the ban is ours")
+
+        mode.set(false)
+        Test.expect(lease.clears == 1, "switching off clears the lease")
+    }
+
+    do {
+        let ban = FakeSleepBan()
+        ban.response = .failure(.cancelled)
+        let lease = FakeBanLease()
+        let mode = SleepMode(ban: ban, lease: lease)
+
+        mode.set(true)
+        Test.expect(lease.renewals == 0,
+                    "a ban that never took leaves no lease — there is nothing to reclaim")
+    }
+
+    do {
+        // A ban somebody else armed: no lease, so the agent must leave it alone.
+        let ban = FakeSleepBan()
+        ban.isActive = true
+        let lease = FakeBanLease()
+        let mode = SleepMode(ban: ban, lease: lease)
+        mode.adoptSystemState()
+
+        mode.renewLease()
+        Test.expect(lease.renewals == 0, "an adopted ban is never claimed by a lease")
+    }
+
+    do {
+        let ban = FakeSleepBan()
+        let lease = FakeBanLease()
+        let mode = SleepMode(ban: ban, lease: lease)
+        mode.set(true)
+
+        mode.relinquish(mayAskPassword: false)
+        Test.expect(lease.clears == 1, "quitting clears the lease along with the ban")
+    }
+
     Test.section("SleepMode: picking up outside changes")
 
     do {

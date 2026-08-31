@@ -17,9 +17,12 @@ final class SleepMode {
 
     private let assertions = PowerAssertions()
     private let ban: SleepBanControlling
+    private let lease: BanLeaseWriting
 
-    init(ban: SleepBanControlling = SystemSleepBanControl()) {
+    init(ban: SleepBanControlling = SystemSleepBanControl(),
+         lease: BanLeaseWriting = FileBanLease()) {
         self.ban = ban
+        self.lease = lease
     }
 
     /// The system ban was switched on by us, so we owe its removal. A ban that was
@@ -47,6 +50,9 @@ final class SleepMode {
         switch ban.set(wanted, allowPrompt: askForPassword) {
         case .success:
             banIsOurs = wanted
+            // The lease is the on-disk half of banIsOurs: it is what tells the reconcile
+            // agent whether a ban left standing was ours to clear.
+            if wanted { lease.renew() } else { lease.clear() }
         case .failure(.cancelled):
             outcome = .partial
         case .failure(.failed(let message)):
@@ -60,6 +66,13 @@ final class SleepMode {
             assertions.apply(active: true)
         }
         return outcome
+    }
+
+    /// Renews the lease while the ban is ours, so the agent can tell a live app from one
+    /// that died holding it. Driven by the same timer as the state sync.
+    func renewLease() {
+        guard banIsOurs, ban.isActive else { return }
+        lease.renew()
     }
 
     /// Picks up changes made behind the app's back — a terminal, another utility.
@@ -92,6 +105,7 @@ final class SleepMode {
         guard banIsOurs else { return }
         banIsOurs = false
 
+        lease.clear()
         ban.clearQuietly()
         if mayAskPassword && ban.isActive {
             _ = ban.set(false, allowPrompt: true)

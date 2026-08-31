@@ -49,3 +49,14 @@ final class FakeSleepBan: SleepBanControlling {
         if quietClearWorks { isActive = false }
     }
 }
+
+/// Stand-in for the on-disk lease, so the state machine can be tested without writing
+/// anything to a real Application Support folder.
+final class FakeBanLease: BanLeaseWriting {
+    private(set) var renewals = 0
+    private(set) var clears = 0
+    var exists: Bool { renewals > 0 && clears == 0 }
+
+    func renew() { renewals += 1 }
+    func clear() { clears += 1 }
+}

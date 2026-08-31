@@ -17,6 +17,7 @@ swiftc -o "$WORK/tests" \
 	"$ROOT/Sources/Localization.swift" \
 	"$ROOT/Sources/PowerAssertions.swift" \
 	"$ROOT/Sources/SystemSleepBan.swift" \
+	"$ROOT/Sources/BanLease.swift" \
 	"$ROOT/Sources/SleepMode.swift" \
 	"$ROOT/Sources/PowerSource.swift" \
 	"$ROOT/Sources/BatteryGuard.swift" \

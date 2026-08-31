@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.6.0
+
+- **The sleep ban can no longer be left armed by a crash.** Every recovery path lived
+  inside the app: the quit handler, the logout handler and `SIGTERM`. None of them is
+  reached by `SIGKILL`, a Force Quit or a kernel panic, and the setting outlives all three
+  — so the Mac would keep skipping sleep with no menu bar icon to explain it, and with the
+  battery guard gone as well, since that runs in the same process. The one failure that
+  armed the setting was the one that removed its guard.
+- A launch agent now reconciles it at login and every minute. While the ban is the app's,
+  the app renews a lease file; a stale lease means it died holding the ban, and the agent
+  clears it. **No lease means the ban was never ours** — armed by hand in a terminal, say —
+  and the agent leaves it alone.
+- A user agent, not a root daemon: it needs no privilege of its own and clears the ban
+  through the same narrow sudo rule the app uses. Without that rule there is still nothing
+  it can do quietly, which is one more reason the installer sets the rule up by default.
+
 ## 1.5.0
 
 - **A cue when the lid moves** while the mode is on: a muted porcelain tone as it closes,

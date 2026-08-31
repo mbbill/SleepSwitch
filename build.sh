@@ -40,6 +40,8 @@ PLIST
 "$ROOT/Tools/check-localization.sh"
 cp -R "$ROOT/Resources/"*.lproj "$APP/Contents/Resources/"
 
+install -m 0755 "$ROOT/Resources/reconcile.sh" "$APP/Contents/Resources/reconcile.sh"
+
 echo "Generating the sounds…"
 swift "$ROOT/Tools/make-sounds.swift" "$APP/Contents/Resources" >/dev/null
 

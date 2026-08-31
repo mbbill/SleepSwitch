@@ -7,8 +7,10 @@ APP="/Applications/SleepSwitch.app"
 SUDOERS="/etc/sudoers.d/sleepswitch"
 BUNDLE="com.ganin.sleepswitch"
 
-echo "Stopping the app…"
+echo "Stopping the app and its reconcile agent…"
 /usr/bin/pkill -x SleepSwitch 2>/dev/null || true
+/bin/launchctl bootout "gui/$(id -u)/com.ganin.sleepswitch.reconcile" 2>/dev/null || true
+/bin/rm -f "$HOME/Library/LaunchAgents/com.ganin.sleepswitch.reconcile.plist"
 sleep 1
 
 # The sleep ban is a system setting and outlives the app, so it has to go first:
@@ -26,7 +28,7 @@ sudo /usr/sbin/pkgutil --forget com.ganin.sleepswitch.app > /dev/null 2>&1 || tr
 sudo /usr/sbin/pkgutil --forget com.ganin.sleepswitch.sudoers > /dev/null 2>&1 || true
 
 /usr/bin/defaults delete "$BUNDLE" 2>/dev/null || true
-/bin/rm -rf "$HOME/Library/Application Support/SleepSwitch"
+/bin/rm -rf "$HOME/Library/Application Support/SleepSwitch"   # holds the ban lease
 /bin/rm -rf "$HOME/Library/Saved Application State/$BUNDLE.savedState"
 
 echo

@@ -36,7 +36,8 @@ the lid propped open.
 - **Won't flatten your battery.** The mode switches itself off below a charge you pick, and
   optionally the moment you unplug.
 - **Tells you it worked.** A quiet tone as the lid closes and another as it opens.
-- **Nothing left behind.** Quit the app — or kill it — and the sleep ban lifts itself.
+- **Nothing left behind.** Quit it, force quit it, or crash the machine — the sleep ban is
+  cleared either way.
 - **Updates itself from GitHub** — checks daily, hands you the installer, never swaps
   binaries behind your back.
 - **English and Russian**, app and installer, following your system language.
@@ -84,9 +85,10 @@ Two independent layers, because macOS treats these as two different things:
 | `PreventUserIdleDisplaySleep` assertion | Display turning off | No |
 
 The IOKit assertions are held by the process, so they evaporate the moment the app dies —
-they can never get stuck. The `pmset` setting persists, so the app clears it on quit, on
+they can never get stuck. The `pmset` setting persists, so the app clears it on quit and on
 `SIGTERM`, and reports the real state at launch by reading `SleepDisabled` straight from
-`IOPMrootDomain`.
+`IOPMrootDomain`. The failures that reach no handler at all are covered separately, in
+[When the app dies holding the ban](#when-the-app-dies-holding-the-ban).
 
 ## About the sudo rule
 
@@ -122,6 +124,23 @@ simply means sleep.
 The tones are synthesised at build time by [`Tools/make-sounds.swift`](Tools/make-sounds.swift),
 so no audio file lives in this repository. A Mac without a lid gets neither the cues nor the
 setting.
+
+## When the app dies holding the ban
+
+The IOKit assertions cannot get stuck — they belong to the process and go when it goes. The
+`pmset` setting is different: it outlives `SIGKILL`, a Force Quit and a panic, none of which
+reach any handler the app could install. Left alone, that means a Mac that will not sleep,
+with no icon in the menu bar to say why and no battery guard either, since the guard ran in
+the process that just died.
+
+So a launch agent reconciles it at login and once a minute. While the ban belongs to the
+app, the app renews a lease file; a stale lease means it died holding the ban and the agent
+clears it. A missing lease means the ban was never the app's — armed by hand in a terminal,
+perhaps — and the agent leaves it strictly alone.
+
+It runs as you rather than as root, and clears the ban through the same narrow `sudo` rule
+the app uses, so it grants itself nothing. Without that rule it has no quiet way to act
+either — one more reason the installer sets the rule up by default.
 
 ## Battery guard
 
