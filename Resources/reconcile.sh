@@ -11,7 +11,8 @@ set -u
 LEASE="$HOME/Library/Application Support/SleepSwitch/ban.lease"
 STALE_AFTER=300
 
-/usr/sbin/ioreg -n IOPMrootDomain -r -d 1 | grep -q '"SleepDisabled" = Yes' || exit 0
+BANNED=no
+/usr/sbin/ioreg -n IOPMrootDomain -r -d 1 | grep -q '"SleepDisabled" = Yes' && BANNED=yes
 
 # No lease means the ban was never ours — somebody armed it by hand, and undoing another
 # party's setting is not this script's business.
@@ -19,6 +20,16 @@ STALE_AFTER=300
 
 MODIFIED="$(/usr/bin/stat -f %m "$LEASE" 2>/dev/null)" || exit 0
 AGE=$(( $(/bin/date +%s) - MODIFIED ))
+
+if [ "$BANNED" = no ]; then
+	# A claim with no ban behind it: the app writes the claim first and died before arming,
+	# or something cleared the ban from underneath. Once stale it cannot belong to a live
+	# app, and leaving it would let it attach itself to a ban somebody else arms later —
+	# turning the honest "not ours" case into a wrong clear. Only stale ones go, so a claim
+	# just written and not yet armed is never pulled out from under the app.
+	[ "$AGE" -ge "$STALE_AFTER" ] && /bin/rm -f "$LEASE"
+	exit 0
+fi
 
 # Renewed within the window: the app is alive and still wants the ban. The margin over the
 # app's 30-second renewal is deliberate — a background app can be throttled, and switching

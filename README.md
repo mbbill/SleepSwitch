@@ -138,6 +138,13 @@ app, the app renews a lease file; a stale lease means it died holding the ban an
 clears it. A missing lease means the ban was never the app's — armed by hand in a terminal,
 perhaps — and the agent leaves it strictly alone.
 
+The lease is written *before* the ban is armed. Recorded afterwards, a kill landing between
+the two would leave a ban with no lease, and the agent would read that as somebody else's —
+the one reading that must never apply to a crash of ours. The cost is a claim that can
+briefly exist with no ban behind it, so the app drops it as soon as the ban turns out not to
+be there, and the agent removes a stale claim standing alone. Only stale ones, so a claim
+written a moment ago and not yet armed is never pulled out from under a live app.
+
 It runs as you rather than as root, and clears the ban through the same narrow `sudo` rule
 the app uses, so it grants itself nothing. Without that rule it has no quiet way to act
 either — one more reason the installer sets the rule up by default.

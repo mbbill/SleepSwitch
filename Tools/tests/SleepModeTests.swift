@@ -114,14 +114,27 @@ func runSleepModeTests() {
     }
 
     do {
+        let log = EventLog()
+        let ban = FakeSleepBan()
+        ban.log = log
+        let lease = FakeBanLease(log: log)
+        let mode = SleepMode(ban: ban, lease: lease)
+
+        mode.set(true)
+        Test.expect(log.events == ["claim written", "ban armed"],
+                    "the claim is written before the ban is armed, never after")
+    }
+
+    do {
         let ban = FakeSleepBan()
         ban.response = .failure(.cancelled)
         let lease = FakeBanLease()
         let mode = SleepMode(ban: ban, lease: lease)
 
         mode.set(true)
-        Test.expect(lease.renewals == 0,
-                    "a ban that never took leaves no lease — there is nothing to reclaim")
+        Test.expect(!lease.exists,
+                    "a claim with no ban behind it is cleared, not left to attach itself "
+                        + "to somebody else's ban later")
     }
 
     do {

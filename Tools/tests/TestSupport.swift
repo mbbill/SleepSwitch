@@ -27,6 +27,7 @@ enum Test {
 /// Stand-in for the privileged half, so the state machine can be driven through paths the
 /// real system cannot be talked into on demand — a declined password, a failing `pmset`.
 final class FakeSleepBan: SleepBanControlling {
+    var log: EventLog?
     var isActive = false
 
     /// What the next `set` should pretend to do.
@@ -40,6 +41,7 @@ final class FakeSleepBan: SleepBanControlling {
 
     func set(_ on: Bool, allowPrompt: Bool) -> Result<Void, SystemSleepBan.Failure> {
         setCalls.append((on, allowPrompt))
+        log?.record(on ? "ban armed" : "ban cleared")
         if case .success = response { isActive = on }
         return response
     }
@@ -50,13 +52,33 @@ final class FakeSleepBan: SleepBanControlling {
     }
 }
 
+/// Records the order things happened in. Whether the claim is written before or after the
+/// ban is the difference between a crash being recoverable and being invisible, so the
+/// order is worth pinning down rather than trusting.
+final class EventLog {
+    private(set) var events: [String] = []
+    func record(_ event: String) { events.append(event) }
+}
+
 /// Stand-in for the on-disk lease, so the state machine can be tested without writing
 /// anything to a real Application Support folder.
 final class FakeBanLease: BanLeaseWriting {
+    private let log: EventLog?
+    private(set) var exists = false
     private(set) var renewals = 0
     private(set) var clears = 0
-    var exists: Bool { renewals > 0 && clears == 0 }
 
-    func renew() { renewals += 1 }
-    func clear() { clears += 1 }
+    init(log: EventLog? = nil) { self.log = log }
+
+    func renew() {
+        exists = true
+        renewals += 1
+        log?.record("claim written")
+    }
+
+    func clear() {
+        exists = false
+        clears += 1
+        log?.record("claim cleared")
+    }
 }

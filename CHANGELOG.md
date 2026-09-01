@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.6.1
+
+- The lease is now written **before** the ban is armed rather than after. Recorded
+  afterwards, a kill landing between the two calls left a ban with no lease — and a missing
+  lease is what tells the agent "somebody else armed this, leave it alone", which is the one
+  reading that must never apply to a crash of ours. A narrower window than 1.6.0 closed, but
+  the same ending.
+- Writing ahead costs a claim that can briefly exist with no ban behind it, so the app drops
+  the claim as soon as the ban turns out not to be there, and the agent removes a stale claim
+  it finds standing alone. Left lying around, such a claim would later attach itself to a ban
+  somebody else armed and turn the honest "not ours" case into a wrong clear.
+- Only stale orphan claims are removed, so a claim written a moment ago and not yet armed is
+  never pulled out from under a live app.
+
 ## 1.6.0
 
 - **The sleep ban can no longer be left armed by a crash.** Every recovery path lived

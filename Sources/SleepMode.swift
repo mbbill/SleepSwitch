@@ -46,13 +46,16 @@ final class SleepMode {
         isOn = wanted
         assertions.apply(active: wanted)
 
+        // Write-ahead. The claim goes on disk before the ban exists, never after: recorded
+        // afterwards, a kill landing between the two would leave a ban with no lease, and a
+        // missing lease is exactly what tells the agent "somebody else armed this, leave it
+        // alone" — the one branch that must never be taken for a crash of ours.
+        if wanted { lease.renew() }
+
         var outcome = Outcome.applied
         switch ban.set(wanted, allowPrompt: askForPassword) {
         case .success:
             banIsOurs = wanted
-            // The lease is the on-disk half of banIsOurs: it is what tells the reconcile
-            // agent whether a ban left standing was ours to clear.
-            if wanted { lease.renew() } else { lease.clear() }
         case .failure(.cancelled):
             outcome = .partial
         case .failure(.failed(let message)):
@@ -65,6 +68,12 @@ final class SleepMode {
             isOn = true
             assertions.apply(active: true)
         }
+
+        // The cost of writing ahead: a claim with no ban behind it. Left lying around it
+        // would later attach itself to a ban somebody else armed, so it goes as soon as the
+        // ban turns out not to be there — whether the arming failed or this was a switch off.
+        if !ban.isActive { lease.clear() }
+
         return outcome
     }
 
