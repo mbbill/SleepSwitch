@@ -15,6 +15,7 @@ trap 'rm -rf "$WORK"' EXIT
 swiftc -o "$WORK/tests" \
 	-framework IOKit \
 	"$ROOT/Sources/Localization.swift" \
+	"$ROOT/Sources/LidActions.swift" \
 	"$ROOT/Sources/PowerAssertions.swift" \
 	"$ROOT/Sources/SystemSleepBan.swift" \
 	"$ROOT/Sources/BanLease.swift" \

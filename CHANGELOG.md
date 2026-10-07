@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.1.2
+
+- Request display sleep with `pmset displaysleepnow` when the lid closes in awake mode,
+  even when lid sounds are disabled. This sleeps external displays too.
+- Keep brightness unchanged. Removing the display assertion alone in 1.6.1.1 did not
+  extinguish the built-in panel in the owner's closed-lid test.
+
+## 1.6.1.1
+
+- Allow display idle sleep while awake mode continues to block system sleep.
+- Physical closed-lid backlight behavior still requires verification on the target Mac.
+
 ## 1.6.1
 
 - The lease is now written **before** the ban is armed rather than after. Recorded

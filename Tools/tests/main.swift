@@ -1,5 +1,7 @@
 import Foundation
 
+runLidActionsTests()
+runPowerAssertionsTests()
 runSleepModeTests()
 runBatteryGuardTests()
 runUpdaterTests()
