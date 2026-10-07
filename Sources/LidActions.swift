@@ -6,7 +6,7 @@ enum LidActions {
                        playSound: (Bool) -> Void, sleepDisplay: () -> Void) {
         guard awake else { return }
         if soundsEnabled { playSound(closed) }
-        // Existing behavior: lid events only play the optional sound.
+        if closed { sleepDisplay() }
     }
 }
 
