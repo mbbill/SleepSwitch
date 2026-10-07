@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let powerSource = PowerSource()
     private let lid = LidWatcher()
     private let sounds = Sounds()
+    private let displaySleep = DisplaySleep()
 
     private var statusItem: NSStatusItem!
     private var syncTimer: Timer?
@@ -61,11 +62,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         lid.startObserving { [weak self] closed in self?.lidChanged(closed: closed) }
     }
 
-    /// A cue only while the mode is on. With the mode off, closing the lid puts the Mac to
-    /// sleep and there is nothing to announce.
+    /// Closing the lid needs an explicit display-sleep request while system sleep is
+    /// disabled. Turning off lid sounds must not turn off this behavior.
     private func lidChanged(closed: Bool) {
-        guard mode.isOn, Preferences.lidSounds else { return }
-        sounds.play(closed ? .lidClosed : .lidOpened)
+        LidActions.handle(closed: closed, awake: mode.isOn,
+                          soundsEnabled: Preferences.lidSounds,
+                          playSound: { self.sounds.play($0 ? .lidClosed : .lidOpened) },
+                          sleepDisplay: { self.displaySleep.request() })
     }
 
     func applicationWillTerminate(_ notification: Notification) {
