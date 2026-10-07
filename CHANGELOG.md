@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.1.1
+
+- Allow display idle sleep while awake mode continues to block system sleep.
+- Physical closed-lid backlight behavior still requires verification on the target Mac.
+
 ## 1.6.1
 
 - The lease is now written **before** the ban is armed rather than after. Recorded

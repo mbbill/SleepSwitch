@@ -30,7 +30,7 @@ the lid propped open.
 
 - **Lid-close sleep off.** Shut the laptop, it keeps running.
 - **Idle sleep off.** Your idle timer is ignored while the mode is on.
-- **Screen stays lit** while the mode is on — no separate switch to think about.
+- **Display sleep remains enabled.** The screen can turn off while background work continues.
 - **Ask for the password once.** The installer sets up a narrowly scoped `sudo` rule, then
   toggling never prompts again.
 - **Won't flatten your battery.** The mode switches itself off below a charge you pick, and
@@ -82,7 +82,6 @@ Two independent layers, because macOS treats these as two different things:
 | --- | --- | --- |
 | `pmset -a disablesleep 1` | Lid-close sleep, and all sleep | Yes |
 | `PreventUserIdleSystemSleep` assertion | Idle sleep | No |
-| `PreventUserIdleDisplaySleep` assertion | Display turning off | No |
 
 The IOKit assertions are held by the process, so they evaporate the moment the app dies —
 they can never get stuck. The `pmset` setting persists, so the app clears it on quit and on
